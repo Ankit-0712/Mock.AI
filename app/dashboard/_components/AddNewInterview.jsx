@@ -6,13 +6,18 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { createChatSession } from '@/utils/GeminAIModel'
 import { LoaderCircle } from 'lucide-react'
+import { db } from '@/utils/db'
+import { MockInterview } from '@/utils/schema'
+import { v4 as uuidv4 } from 'uuid'
+import { useUser } from '@clerk/nextjs'
+import moment from 'moment'
+import { useRouter } from 'next/navigation'
 
 function AddNewInterview() {
     const [openDialog, setOpenDialog] = useState(false)
@@ -20,31 +25,65 @@ function AddNewInterview() {
     const [jobDesc, setJobDesc] = useState("")
     const [jobExperience, setJobExperience] = useState("")
     const [chat, setChat] = useState(null)
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false)
+    const [jsonResponse, setJsonResponse] = useState([])
+    const router = useRouter();
+    const { user } = useUser()
+
     const onSubmit = async (e) => {
-        setLoading(true);
+        setLoading(true)
         e.preventDefault()
-        console.log(jobPosition, jobDesc, jobExperience)
 
-        try {
-          
-            let currentChat = chat
-            if (!currentChat) {
-                currentChat = await createChatSession()
-                setChat(currentChat)
-            }
+        console.log("User Inputs:")
+        console.log("Job Position:", jobPosition)
+        console.log("Job Description:", jobDesc)
+        console.log("Years of Experience:", jobExperience)
 
-            const InputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}.
+        let currentChat = chat
+        if (!currentChat) {
+            currentChat = await createChatSession()
+            setChat(currentChat)
+        }
+
+        const InputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}.
 Based on these, give ${process.env.NEXT_PUBLIC_INTERVIEW_QUESTION_COUNT || 5} interview questions with answers in JSON format.
 The JSON should contain objects with "question" and "answer" fields.`
 
-            const result = await currentChat.sendMessage(InputPrompt)
-            const text = await result.response.text().replace('```json','').replace('```','')
-            console.log(JSON.parse(text));
+        const result = await currentChat.sendMessage(InputPrompt)
+        let rawText = await result.response.text()
+
+        
+        rawText = rawText.replace(/```json|```/g, '').trim()
+
+        let parsedJson = []
+        try {
+            parsedJson = JSON.parse(rawText)
         } catch (error) {
-            console.error("Error generating questions:", error)
+            console.error("❌ Failed to parse JSON:", error)
+            console.log("⚠️ Raw response:", rawText)
+            setLoading(false)
+            return
         }
-        setLoading(false);
+
+        console.log("✅ Parsed Interview Q&A JSON:", parsedJson)
+        setJsonResponse(parsedJson)
+
+        const resp = await db.insert(MockInterview).values({
+            mockId: uuidv4(),
+            jsonMockResp: rawText,
+            jobPosition: jobPosition,
+            jobDesc: jobDesc,
+            jobExperience: jobExperience,
+            createdBy: user?.primaryEmailAddress?.emailAddress,
+            cretedAt: moment().format('DD-MM-yyyy')
+        }).returning({ mockId: MockInterview.mockId })
+
+        console.log("🟢 Inserted into DB with ID:", resp)
+        if (resp) {
+            setOpenDialog(false);
+            router.push(`/dashboard/interview/${resp[0].mockId}`);  // ✅ Correct path format
+        }
+        setLoading(false)
     }
 
     return (
@@ -117,11 +156,12 @@ The JSON should contain objects with "question" and "answer" fields.`
                                         Cancel
                                     </Button>
                                     <Button type="submit" disabled={loading}>
-                                        {loading?
-                                        <>
-                                      <LoaderCircle className='animate-spin'/>'Generating fron AI'
-                                      </> : 'Start Interview'
-                                    }
+                                        {loading ? (
+                                            <>
+                                                <LoaderCircle className='animate-spin mr-2' />
+                                                Generating from AI...
+                                            </>
+                                        ) : 'Start Interview'}
                                     </Button>
                                 </div>
                             </form>

@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import Webcam from 'react-webcam'
 import { Lightbulb, WebcamIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 function Interview() {
   const params = useParams()
@@ -27,8 +28,8 @@ function Interview() {
   }, [params])
 
   return (
-    <div className='my-12 px-6 flex flex-col items-center'>
-      <h2 className='font-bold text-3xl mb-10'>🎯 Let's Get Started</h2>
+    <div className="min-h-screen w-full flex flex-col items-center py-12 px-6">
+      <h2 className='font-bold text-3xl mb-10 text-gray-800'>🎯 Let's Get Started</h2>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-7xl'>
         {/* Left Side - Interview Info */}
@@ -45,46 +46,46 @@ function Interview() {
               <p className='text-gray-700'>{interviewData.jobExperience}</p>
             </div>
 
-            <div className='p-6 rounded-xl border shadow-sm border-yellow-300 bg-yellow-100'>
-              <h2 className='flex gap-2 items-center font-semibold text-yellow-500 text-lg mb-2'>
+            <div className='p-6 rounded-xl border border-yellow-300 bg-yellow-100 shadow-sm'>
+              <h2 className='flex gap-2 items-center font-semibold text-yellow-600 text-lg mb-2'>
                 <Lightbulb className='w-5 h-5' /> Important Information
               </h2>
-              <p className='text-yellow-500'>{process.env.NEXT_PUBLIC_INFORMATION}</p>
+              <p className='text-yellow-600'>{process.env.NEXT_PUBLIC_INFORMATION}</p>
             </div>
           </div>
         )}
 
-        {/* Right Side - Webcam Section (Restored to Previous Style) */}
-        <div className='flex flex-col items-center justify-center gap-5'>
-  {webcamEnabled ? (
-    <Webcam
-      onUserMedia={() => setWebCamEnabled(true)}
-      onUserMediaError={() => setWebCamEnabled(false)}
-      mirrored={true}
-      style={{
-        height: 300,
-        width: 300,
-        borderRadius: '12px',
-        border: '1px solid #ccc'
-      }}
-    />
-  ) : (
-    <>
-      <WebcamIcon className='h-72 w-full mb-2 p-20 bg-secondary rounded-lg border' />
-      <Button variant="ghost" className="w-full"onClick={() => setWebCamEnabled(true)}>
-        Enable Web Cam and Microphone
-      </Button>
-    </>
-  )}
+        {/* Right Side - Webcam Section */}
+        <div className='flex flex-col items-center justify-center gap-5 bg-white p-6 rounded-xl shadow-md'>
+          {webcamEnabled ? (
+            <Webcam
+              onUserMedia={() => setWebCamEnabled(true)}
+              onUserMediaError={() => setWebCamEnabled(false)}
+              mirrored={true}
+              style={{
+                height: 300,
+                width: 300,
+                borderRadius: '12px',
+                border: '1px solid #ccc'
+              }}
+            />
+          ) : (
+            <>
+              <WebcamIcon className='h-72 w-full mb-2 p-20 bg-secondary rounded-lg border text-gray-400' />
+              <Button variant="ghost" className="w-full" onClick={() => setWebCamEnabled(true)}>
+                Enable Web Cam and Microphone
+              </Button>
+            </>
+          )}
 
-  {/* Start Button - always shown, right under the camera section */}
-  <Button variant="default" className='mt-4'>
-    Start Interview
-  </Button>
-</div>
-</div>
-</div>
-    
+          <Link href={`/dashboard/interview/${params.interviewId}/start`} className="w-full">
+            <Button variant="default" className='w-full mt-2'>
+              Start Interview
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
   )
 }
 

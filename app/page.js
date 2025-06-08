@@ -30,7 +30,7 @@ with our AI-powered interview prep</p>
   <span className="font-semibold text-gray-400 uppercase tracking-wide">Featured On</span>
   <div className="mt-6 flex justify-center">
     <a
-      href="https://github.com/your-repo"
+      href="https://github.com/Ankit-0712/Mock.AI"
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center gap-2 px-4 py-2 mt-4 border border-gray-300 rounded-lg hover:shadow-lg hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 transition"

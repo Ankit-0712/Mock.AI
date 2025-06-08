@@ -24,20 +24,32 @@ function AddNewInterview() {
     const [jobPosition, setJobPosition] = useState("")
     const [jobDesc, setJobDesc] = useState("")
     const [jobExperience, setJobExperience] = useState("")
+    const [resumeFile, setResumeFile] = useState(null)      // <-- New state for resume
     const [chat, setChat] = useState(null)
     const [loading, setLoading] = useState(false)
     const [jsonResponse, setJsonResponse] = useState([])
     const router = useRouter();
     const { user } = useUser()
 
+    const onResumeChange = (e) => {
+        if (e.target.files.length > 0) {
+            setResumeFile(e.target.files[0])
+        }
+    }
+
     const onSubmit = async (e) => {
-        setLoading(true)
         e.preventDefault()
+        setLoading(true)
 
         console.log("User Inputs:")
         console.log("Job Position:", jobPosition)
         console.log("Job Description:", jobDesc)
         console.log("Years of Experience:", jobExperience)
+        if (resumeFile) {
+            console.log("Resume File:", resumeFile.name)
+        } else {
+            console.log("No Resume uploaded")
+        }
 
         let currentChat = chat
         if (!currentChat) {
@@ -52,7 +64,6 @@ The JSON should contain objects with "question" and "answer" fields.`
         const result = await currentChat.sendMessage(InputPrompt)
         let rawText = await result.response.text()
 
-        
         rawText = rawText.replace(/```json|```/g, '').trim()
 
         let parsedJson = []
@@ -68,12 +79,16 @@ The JSON should contain objects with "question" and "answer" fields.`
         console.log("✅ Parsed Interview Q&A JSON:", parsedJson)
         setJsonResponse(parsedJson)
 
+        // TODO: Handle resume upload here - e.g., upload to cloud storage & get URL
+        // For now, skipping upload and saving resumeFile name as string in DB
+
         const resp = await db.insert(MockInterview).values({
             mockId: uuidv4(),
             jsonMockResp: rawText,
             jobPosition: jobPosition,
             jobDesc: jobDesc,
             jobExperience: jobExperience,
+            resumeFileName: resumeFile ? resumeFile.name : null,   // Save resume file name (optional)
             createdBy: user?.primaryEmailAddress?.emailAddress,
             cretedAt: moment().format('DD-MM-yyyy')
         }).returning({ mockId: MockInterview.mockId })
@@ -103,6 +118,7 @@ The JSON should contain objects with "question" and "answer" fields.`
                         </DialogTitle>
                         <DialogDescription>
                             <form onSubmit={onSubmit}>
+
                                 <div>
                                     <h2 className="mb-6 font-bold">
                                         Add Details about your Job position/role, Job Description, and years of Experience 
@@ -144,6 +160,27 @@ The JSON should contain objects with "question" and "answer" fields.`
                                             value={jobExperience}
                                             onChange={(e) => setJobExperience(e.target.value)}
                                         />
+                                    </div>
+
+                                    {/* Resume upload */}
+                                    <div className='mb-4'>
+                                        <label className="block text-sm font-medium mb-2">
+                                            Upload Your Resume (optional)
+                                        </label>
+                                        <input 
+                                            type="file" 
+                                            accept=".pdf,.doc,.docx" 
+                                            onChange={onResumeChange} 
+                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                                                       file:rounded file:border-0
+                                                       file:text-sm file:font-semibold
+                                                       file:bg-indigo-50 file:text-indigo-700
+                                                       hover:file:bg-indigo-100
+                                            "
+                                        />
+                                        {resumeFile && (
+                                            <p className='mt-2 text-sm text-gray-700'>Selected File: {resumeFile.name}</p>
+                                        )}
                                     </div>
                                 </div>
 
